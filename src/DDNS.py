@@ -9,7 +9,9 @@ Created By Martin Huang on 2018/5/20
 2018/9/24 => 修改失败提示信息
 '''
 import logging
-logging.basicConfig(filename='/mnt/usbhome/log/DDNS.log', level=logging.INFO)
+logging.basicConfig(filename='/mnt/usbhome/log/DDNS.log',
+	format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s:%(message)s'
+	, level=logging.INFO)
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from Utils import Utils

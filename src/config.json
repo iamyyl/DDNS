@@ -3,5 +3,5 @@
     "AccessKeySecret": "",
     "First-level-domain": "",
     "Second-level-domain": "",
-	"Description": "Copy and rename me to /etc/ddns_config.json"
+	"Description": "Copy and rename me to /etc/ddns_config.json. Copy all .py into /usr/local/bin"
 }
