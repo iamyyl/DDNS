@@ -18,7 +18,7 @@ from Utils import Utils
 import time
 import argparse
 
-waitSeconds = 60
+waitSeconds = 1800 
 prvIp = ""
 
 def getRealIp(use_v6):
