@@ -8,48 +8,67 @@ Created By Martin Huang on 2018/5/20
 2018/6/10 => 使用配置文件存储配置，避免代码内部修改(需要注意Python模块相互引用问题)
 2018/9/24 => 修改失败提示信息
 '''
+import logging
+logging.basicConfig(filename='/mnt/usbhome/log/DDNS.log', level=logging.INFO)
 from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from Utils import Utils
 import time
 import argparse
 
-def DDNS(use_v6):
-    client = Utils.getAcsClient()
-    recordId = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
-    if use_v6:
-        ip = Utils.getRealIPv6()
-        type = 'AAAA'
-    else:
-        ip = Utils.getRealIP()
-        type = 'A'
-    print({'type': type, 'ip':ip})
+waitSeconds = 60
+prvIp = ""
 
-    request = Utils.getCommonRequest()
-    request.set_domain('alidns.aliyuncs.com')
-    request.set_version('2015-01-09')
-    request.set_action_name('UpdateDomainRecord')
-    request.add_query_param('RecordId', recordId)
-    request.add_query_param('RR', Utils.getConfigJson().get('Second-level-domain'))
-    request.add_query_param('Type', type)
-    request.add_query_param('Value', ip)
-    response = client.do_action_with_exception(request)
-    return response
+def getRealIp(use_v6):
+	if use_v6:
+		ip = Utils.getRealIPv6()
+		type = 'AAAA'
+	else:
+		ip = Utils.getRealIP()
+		type = 'A'
+	return ip, type
+	
+def DDNS(ip, type):
+	client = Utils.getAcsClient()
+	recordId, ipOnAli = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
+
+	request = Utils.getCommonRequest()
+	request.set_domain('alidns.aliyuncs.com')
+	request.set_version('2015-01-09')
+	request.set_action_name('UpdateDomainRecord')
+	request.add_query_param('RecordId', recordId)
+	request.add_query_param('RR', Utils.getConfigJson().get('Second-level-domain'))
+	request.add_query_param('Type', type)
+	request.add_query_param('Value', ip)
+	response = client.do_action_with_exception(request)
+	return response
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='DDNS')
-    parser.add_argument('-6', '--ipv6', nargs='*', default=False)
-    args = parser.parse_args()
-    isipv6 = isinstance(args.ipv6, list)
+	parser = argparse.ArgumentParser(description='DDNS')
+	parser.add_argument('-6', '--ipv6', nargs='*', default=False)
+	args = parser.parse_args()
+	isipv6 = isinstance(args.ipv6, list)
 
-    try:
-        while not Utils.isOnline():
-            time.sleep(3)
-            continue
-        result = DDNS(isipv6)
-        print("成功！")
-    except (ServerException,ClientException) as reason:
-        print("失败！原因为")
-        print(reason.get_error_msg())
-        print("可参考:https://help.aliyun.com/document_detail/29774.html?spm=a2c4g.11186623.2.20.fDjexq#%E9%94%99%E8%AF%AF%E7%A0%81")
-        print("或阿里云帮助文档")
+	logging.info("Starting.....")
+	while (True):
+		#if not Utils.isOnline():
+			#logging.info("not online")
+			#time.sleep(waitSeconds)
+			#continue
+		try:
+			ip, type = getRealIp(isipv6)
+			if (ip is None or prvIp == str(ip)):
+				logging.info("ip not changed")
+				time.sleep(waitSeconds)
+				continue;	
+			prvIp = str(ip)
+			result = DDNS(ip, type)
+			logging.info("Set succ, ip:", str(ip))
+		except (ServerException,ClientException) as reason:
+			logging.warning("Set Faild, reason:")
+			logging.warning(reason.get_error_msg())
+		else:
+			logging.warning("unknow exception")
+		pass #while pass
+	logging.info("End")
+

@@ -16,3 +16,7 @@ class AcsClientSing:
             acsDict = tools.Utils.getConfigJson()
             self.__client = AcsClient(acsDict.get('AccessKeyId'), acsDict.get('AccessKeySecret'), 'cn-hangzhou')
         return self.__client
+
+if __name__ == "__main__":
+	client = AcsClientSing.getInstance();
+	print (client)

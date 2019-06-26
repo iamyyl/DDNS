@@ -1,6 +1,7 @@
 {
-    "AccessKeyId": "Your_AccessKeyId",
-    "AccessKeySecret": "Your_AccessKeySecret",
-    "First-level-domain": "Your_First-level-domain",
-    "Second-level-domain": "Your_Second-level-domain"
+    "AccessKeyId": "",
+    "AccessKeySecret": "",
+    "First-level-domain": "",
+    "Second-level-domain": "",
+	"Description": "Copy and rename me to /etc/ddns_config.json"
 }

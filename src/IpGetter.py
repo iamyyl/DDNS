@@ -1,3 +1,5 @@
+#coding:utf-8
+
 '''
 获取用户真实IP地址
 Created By Martin Huang on 2018/5/19
@@ -34,3 +36,8 @@ def getIpPageV6():
 def getRealIpV6(data):
     jsonData = json.loads(data)
     return jsonData['address']
+
+if __name__ == "__main__":
+	data = getIpPage()
+	ip = getRealIp(data)
+	print(ip)
