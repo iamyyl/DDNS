@@ -17,16 +17,17 @@ from aliyunsdkcore.acs_exception.exceptions import ClientException
 from Utils import Utils
 import time
 import argparse
+import os
 
-waitSeconds = 1800 
+waitSeconds = 300
 prvIp = ""
 
-def getRealIp(use_v6):
+def getRealIp(use_v6, times):
 	if use_v6:
 		ip = Utils.getRealIPv6()
 		type = 'AAAA'
 	else:
-		ip = Utils.getRealIP()
+		ip = Utils.getRealIP(times)
 		type = 'A'
 	return ip, type
 	
@@ -45,27 +46,33 @@ def DDNS(ip, type):
 	response = client.do_action_with_exception(request)
 	return response
 
-if __name__ == "__main__":
+
+def run()
 	parser = argparse.ArgumentParser(description='DDNS')
 	parser.add_argument('-6', '--ipv6', nargs='*', default=False)
 	args = parser.parse_args()
 	isipv6 = isinstance(args.ipv6, list)
 
 	logging.info("Starting.....")
+    times = 0
 	while (True):
 		#if not Utils.isOnline():
 			#logging.info("not online")
 			#time.sleep(waitSeconds)
 			#continue
 		try:
-			ip, type = getRealIp(isipv6)
-			if (ip is None or prvIp == str(ip)):
-				logging.info("ip not changed")
-				time.sleep(waitSeconds)
-				continue;	
-			prvIp = str(ip)
-			result = DDNS(ip, type)
-			logging.info("Set succ, ip:", str(ip))
+            if (os.fork() == 0):
+			    ip, type = getRealIp(isipv6, times)
+			    if (ip is None or prvIp == str(ip)):
+				    logging.info("ip not changed")
+				    return
+			    prvIp = str(ip)
+			    result = DDNS(ip, type)
+			    logging.info("Set succ, ip:", str(ip))
+                return
+            else:
+                times += 1
+                time.sleep(waitSeconds)
 		except (ServerException,ClientException) as reason:
 			logging.warning("Set Faild, reason:")
 			logging.warning(reason.get_error_msg())
@@ -74,3 +81,5 @@ if __name__ == "__main__":
 		pass #while pass
 	logging.info("End")
 
+if __name__ == "__main__":
+    run()

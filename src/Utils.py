@@ -7,25 +7,26 @@ Created By Martin Huang on 2018/5/19
 2018/6/3 =》网络连通性代码重构
 2018/6/10 =》增加配置文件读取方法(可能有IO性能影响，考虑重构)
 '''
+import IpGetter2
 import IpGetter
 import platform
 import	subprocess
 import json
 from AcsClientSingleton import AcsClientSing
 from CommonRequestSingleton import CommonRequestSing
+
 class Utils:
+    #获取真实公网IP
+    def getRealIP(times):
+        index = times % len(ipGetter2.getIpList)
+        ip = IpGetter2.getIpList[index]
+        return ip
 
-	#获取真实公网IP
-	def getRealIP():
-		url = IpGetter.getIpPage();
-		ip = IpGetter.getRealIp(url)
-		return ip
-
-	#获取真实公网IPv6
-	def getRealIPv6():
-		url = IpGetter.getIpPageV6();
-		ip = IpGetter.getRealIpV6(url)
-		return ip
+    #获取真实公网IPv6
+    def getRealIPv6():
+        url = IpGetter.getIpPageV6()
+        ip = IpGetter.getRealIpV6(url)
+        return ip
 
 	#获取二级域名的RecordId
 	def getRecordId(domain):
