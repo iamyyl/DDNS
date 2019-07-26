@@ -23,7 +23,7 @@ waitSeconds = 300
 prvIp = ""
 
 def getRealIp(use_v6, times):
-	if use_v6:
+	if use_v6: 
 		ip = Utils.getRealIPv6()
 		type = 'AAAA'
 	else:
@@ -47,39 +47,29 @@ def DDNS(ip, type):
 	return response
 
 
-def run()
+def run():
 	parser = argparse.ArgumentParser(description='DDNS')
 	parser.add_argument('-6', '--ipv6', nargs='*', default=False)
 	args = parser.parse_args()
 	isipv6 = isinstance(args.ipv6, list)
 
 	logging.info("Starting.....")
-    times = 0
+	times = 0
 	while (True):
-		#if not Utils.isOnline():
-			#logging.info("not online")
-			#time.sleep(waitSeconds)
-			#continue
-		try:
-            if (os.fork() == 0):
-			    ip, type = getRealIp(isipv6, times)
-			    if (ip is None or prvIp == str(ip)):
-				    logging.info("ip not changed")
-				    return
-			    prvIp = str(ip)
-			    result = DDNS(ip, type)
-			    logging.info("Set succ, ip:", str(ip))
-                return
-            else:
-                times += 1
-                time.sleep(waitSeconds)
-		except (ServerException,ClientException) as reason:
-			logging.warning("Set Faild, reason:")
-			logging.warning(reason.get_error_msg())
+		if (os.fork() == 0):
+			ip, type = getRealIp(isipv6, times)
+			if (ip is None or prvIp == str(ip)):
+				logging.info("ip not changed")
+				return
+			prvIp = str(ip)
+			result = DDNS(ip, type)
+			logging.info("Set succ, ip:", str(ip))
+			return # if (os.fork() == 0)
 		else:
-			logging.warning("unknow exception")
+			times += 1
+			time.sleep(waitSeconds)
 		pass #while pass
 	logging.info("End")
 
 if __name__ == "__main__":
-    run()
+	run()

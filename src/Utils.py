@@ -7,26 +7,27 @@ Created By Martin Huang on 2018/5/19
 2018/6/3 =》网络连通性代码重构
 2018/6/10 =》增加配置文件读取方法(可能有IO性能影响，考虑重构)
 '''
+
 import IpGetter2
 import IpGetter
 import platform
-import	subprocess
+import subprocess
 import json
-from AcsClientSingleton import AcsClientSing
-from CommonRequestSingleton import CommonRequestSing
+#from AcsClientSingleton import AcsClientSing
+#from CommonRequestSingleton import CommonRequestSing
 
 class Utils:
-    #获取真实公网IP
-    def getRealIP(times):
-        index = times % len(ipGetter2.getIpList)
-        ip = IpGetter2.getIpList[index]
-        return ip
+	#获取真实公网IP
+	def getRealIP(times):
+		index = times % len(IpGetter2.getIpList())
+		ip = IpGetter2.getIpList()[index]()
+		return ip
 
-    #获取真实公网IPv6
-    def getRealIPv6():
-        url = IpGetter.getIpPageV6()
-        ip = IpGetter.getRealIpV6(url)
-        return ip
+	#获取真实公网IPv6
+	def getRealIPv6():
+		url = IpGetter.getIpPageV6()
+		ip = IpGetter.getRealIpV6(url)
+		return ip
 
 	#获取二级域名的RecordId
 	def getRecordId(domain):
@@ -44,34 +45,26 @@ class Utils:
 				return each["RecordId"], each["Value"]
 		return None, None
 
+'''
+    #获取CommonRequest
+    def getCommonRequest():
+	    return CommonRequestSing.getInstance()
 
-	#获取CommonRequest
-	def getCommonRequest():
-		return CommonRequestSing.getInstance()
+    #获取AcsClient
+    def getAcsClient():
+	    return AcsClientSing.getInstance()
 
-	#获取AcsClient
-	def getAcsClient():
-		return AcsClientSing.getInstance()
+    #获取操作系统平台
+    def getOpeningSystem():
+	    return platform.system()
 
-	#获取操作系统平台
-	def getOpeningSystem():
-		return platform.system()
-
-	#判断是否联网
-	def isOnline():
-		userOs = Utils.getOpeningSystem()
-		try:
-			if userOs == "Windows":
-				subprocess.check_call(["ping", "-n", "2", "www.baidu.com"], stdout=subprocess.PIPE)
-			else:
-				subprocess.check_call(["ping", "-c", "2", "www.baidu.com"], stdout=subprocess.PIPE)
-			return True
-		except subprocess.CalledProcessError:
-			print("网络未连通！请检查网络")
-			return False
-
-	#从config.json中获取配置信息JSON串
-	def getConfigJson():
-		with open('/etc/ddns_config.json') as file:
-			jsonStr = json.loads(file.read())
-		return jsonStr
+    #从config.json中获取配置信息JSON串
+    def getConfigJson():
+	    with open('/etc/ddns_config.json') as file:
+		    jsonStr = json.loads(file.read())
+	    return jsonStr
+'''
+if __name__ == '__main__':
+	for i in range(1, 10, 1):
+		ip = Utils.getRealIP(i)	
+		print (ip)
