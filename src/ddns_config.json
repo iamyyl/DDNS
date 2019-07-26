@@ -3,5 +3,8 @@
     "AccessKeySecret": "",
     "First-level-domain": "",
     "Second-level-domain": "",
+    "Logpath":"/tmp",
+    "Daemon-ip" : "127.0.0.1",
+    "Daemon-port" : 7002,
 	"Description": "Copy and rename me to /etc/ddns_config.json. Copy all .py into /usr/local/bin"
 }

@@ -8,28 +8,52 @@ Created By Martin Huang on 2018/5/20
 2018/6/10 => 使用配置文件存储配置，避免代码内部修改(需要注意Python模块相互引用问题)
 2018/9/24 => 修改失败提示信息
 '''
-import logging
-logging.basicConfig(filename='/mnt/usbhome/log/DDNS.log',
-	format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s:%(message)s'
-	, level=logging.INFO)
-from aliyunsdkcore.acs_exception.exceptions import ServerException
-from aliyunsdkcore.acs_exception.exceptions import ClientException
-from Utils import Utils
+import os
+import sys
+import json
 import time
 import argparse
-import os
+import socket
+import SocketServer
+import logging
 
-waitSeconds = 300
+from Utils import Utils
+
+from aliyunsdkcore.acs_exception.exceptions import ServerException
+from aliyunsdkcore.acs_exception.exceptions import ClientException
+
+logFilename = None
+logPath = None
+try:
+	logPath = Utils.getLogpath()
+	logFilename = logPath + '/DDNS.log'
+except:
+	logFilename='/tmp/DDNS.log'
+	logPath = None
+	pass
+
+logging.basicConfig(filename=logFilename,
+	format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s:%(message)s'
+	, level=logging.INFO)
+
+waitSeconds = 300000
 prvIp = ""
+isipv6 = None
+times = 0
+daemonIP, daemonPort = Utils.getDaemonIpPort()
 
 def getRealIp(use_v6, times):
 	if use_v6: 
 		ip = Utils.getRealIPv6()
-		type = 'AAAA'
 	else:
 		ip = Utils.getRealIP(times)
-		type = 'A'
-	return ip, type
+	return ip
+
+def getIpType(use_v6):
+	if use_v6:
+		return 'AAAA'
+	else:
+		return 'A'
 	
 def DDNS(ip, type):
 	client = Utils.getAcsClient()
@@ -46,29 +70,89 @@ def DDNS(ip, type):
 	response = client.do_action_with_exception(request)
 	return response
 
+def send(content):
+	sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+	sockIp, sockPort = SocketServer.getAddress()
+	server_address = (sockIp, sockPort)
+	sock.connect(server_address)
+	sock.send(content.encode())
+	sock.close()
+	pass
+
+def timeoutFn():
+	global times
+	if (os.fork() == 0):
+		# Child
+		try:
+			ip = getRealIp(isipv6, times)
+			content = '{"getrealip" : "'+ str(ip) + '"}'
+			send(content)
+			exit()
+		except Exception as e:
+			logging.warning('Client error : ' + str(e))
+			exit()
+			pass			
+	else:
+		# Parent
+		times += 1
+		return
+	pass # timeoutFn()
+
+def changeIp(ip):
+	global prvIp
+	if (prvIp == ip):
+		logging.info("ip not changed")
+		return
+	if (True or os.fork() == 0):
+		#Child
+		try:
+			type = getIpType(isipv6)
+			result = DDNS(ip, type)
+			content = '{"ddns" : "'+ str(ip) + '"}'
+			send(content)
+			exit()
+		except Exception as e:
+			logging.warning('DDNS error : ' + str(e))
+			exit()
+			pass
+	else:
+		# Parent
+		pass
+	pass
+
+def recivedFn(content):
+	if (content is None):
+		logging.info("recieved content is None!")
+		return
+	
+	d = json.loads(content.decode('utf-8'))
+	keys = d.keys()
+	for key in keys:
+		if (key == 'getrealip'):
+			changeIp(d[key])
+		elif (key == 'ddns'):
+			prvIp = d[key] 
+			logging.info("Set succ, ip: " + str(d[key]))
+		else:
+			logging.warning("recived unknown key : " + key)
+			pass
+
+	pass
 
 def run():
 	parser = argparse.ArgumentParser(description='DDNS')
 	parser.add_argument('-6', '--ipv6', nargs='*', default=False)
 	args = parser.parse_args()
+	global isipv6
 	isipv6 = isinstance(args.ipv6, list)
-
+	
 	logging.info("Starting.....")
-	times = 0
-	while (True):
-		if (os.fork() == 0):
-			ip, type = getRealIp(isipv6, times)
-			if (ip is None or prvIp == str(ip)):
-				logging.info("ip not changed")
-				return
-			prvIp = str(ip)
-			result = DDNS(ip, type)
-			logging.info("Set succ, ip:", str(ip))
-			return # if (os.fork() == 0)
-		else:
-			times += 1
-			time.sleep(waitSeconds)
-		pass #while pass
+	if (not SocketServer.initServer(daemonIP, daemonPort)):
+		logging.error("Init socket server failed, ip=" + str(daemonIP) + ", port = " + str(daemonPort))
+		return	
+	
+	SocketServer.runServer(timeout=waitSeconds,timeoutFn=timeoutFn, recivedFn=recivedFn)
+	
 	logging.info("End")
 
 if __name__ == "__main__":

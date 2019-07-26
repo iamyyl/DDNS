@@ -13,8 +13,8 @@ import IpGetter
 import platform
 import subprocess
 import json
-#from AcsClientSingleton import AcsClientSing
-#from CommonRequestSingleton import CommonRequestSing
+from AcsClientSingleton import AcsClientSing
+from CommonRequestSingleton import CommonRequestSing
 
 class Utils:
 	#获取真实公网IP
@@ -45,25 +45,34 @@ class Utils:
 				return each["RecordId"], each["Value"]
 		return None, None
 
-'''
-    #获取CommonRequest
-    def getCommonRequest():
-	    return CommonRequestSing.getInstance()
+	#获取CommonRequest
+	def getCommonRequest():
+		return CommonRequestSing.getInstance()
 
-    #获取AcsClient
-    def getAcsClient():
-	    return AcsClientSing.getInstance()
+	#获取AcsClient
+	def getAcsClient():
+		return AcsClientSing.getInstance()
 
-    #获取操作系统平台
-    def getOpeningSystem():
-	    return platform.system()
+	#获取操作系统平台
+	def getOpeningSystem():
+		return platform.system()
 
-    #从config.json中获取配置信息JSON串
-    def getConfigJson():
-	    with open('/etc/ddns_config.json') as file:
-		    jsonStr = json.loads(file.read())
-	    return jsonStr
-'''
+	#从config.json中获取配置信息JSON串
+	def getConfigJson():
+		with open('/etc/ddns_config.json') as file:
+			jsonStr = json.loads(file.read())
+		return jsonStr
+	
+	def getLogpath():
+		with open('/etc/ddns_config.json') as file:
+			jsonStr = json.loads(file.read())
+		return jsonStr['Logpath']
+	
+	def getDaemonIpPort():
+		with open('/etc/ddns_config.json') as file:
+			jsonStr = json.loads(file.read())
+		return jsonStr['Daemon-ip'], jsonStr['Daemon-port']
+	
 if __name__ == '__main__':
 	for i in range(1, 10, 1):
 		ip = Utils.getRealIP(i)	
