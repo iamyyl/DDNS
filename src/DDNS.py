@@ -70,6 +70,11 @@ def DDNS(ip, type):
 	response = client.do_action_with_exception(request)
 	return response
 
+def getIpOnAli():
+	client = Utils.getAcsClient()
+	recordId, ipOnAli = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
+	return ipOnAli
+	
 def send(content):
 	sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 	sockIp, sockPort = SocketServer.getAddress()
@@ -140,16 +145,19 @@ def recivedFn(content):
 	pass
 
 def run():
+	global isipv6
+	global prvIp
 	parser = argparse.ArgumentParser(description='DDNS')
 	parser.add_argument('-6', '--ipv6', nargs='*', default=False)
 	args = parser.parse_args()
-	global isipv6
 	isipv6 = isinstance(args.ipv6, list)
 	
 	logging.info("Starting.....")
 	if (not SocketServer.initServer(daemonIP, daemonPort)):
 		logging.error("Init socket server failed, ip=" + str(daemonIP) + ", port = " + str(daemonPort))
 		return	
+	
+	prvIp = getIpOnAli()
 	
 	SocketServer.runServer(timeout=waitSeconds,timeoutFn=timeoutFn, recivedFn=recivedFn)
 	
