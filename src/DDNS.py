@@ -12,6 +12,8 @@ import os
 import sys
 import json
 import time
+import signal
+import errno
 import argparse
 import socket
 import SocketServer
@@ -41,6 +43,7 @@ prvIp = ""
 isipv6 = None
 times = 0
 daemonIP, daemonPort = Utils.getDaemonIpPort()
+pid = None
 
 def getRealIp(use_v6, times):
 	if use_v6: 
@@ -86,16 +89,18 @@ def send(content):
 
 def timeoutFn():
 	global times
-	if (os.fork() == 0):
+	global pid
+	pid = os.fork()
+	if (pid == 0):
 		# Child
 		try:
 			ip = getRealIp(isipv6, times)
 			content = '{"getrealip" : "'+ str(ip) + '"}'
 			send(content)
-			exit()
+			sys.exit(0)
 		except Exception as e:
 			logging.warning('Client error : ' + str(e))
-			exit()
+			sys.exit(0)
 			pass			
 	else:
 		# Parent
@@ -105,20 +110,22 @@ def timeoutFn():
 
 def changeIp(ip):
 	global prvIp
+	global pid
 	if (prvIp == ip):
 		logging.info("ip not changed")
 		return
-	if (True or os.fork() == 0):
+	pid = os.fork()
+	if (pid == 0):
 		#Child
 		try:
 			type = getIpType(isipv6)
 			result = DDNS(ip, type)
 			content = '{"ddns" : "'+ str(ip) + '"}'
 			send(content)
-			exit()
+			sys.exit(0)
 		except Exception as e:
 			logging.warning('DDNS error : ' + str(e))
-			exit()
+			sys.exit(0)
 			pass
 	else:
 		# Parent
@@ -126,6 +133,10 @@ def changeIp(ip):
 	pass
 
 def recivedFn(content):
+	global pid
+	os.waitpid(-1, 0)
+	pid = 0
+	
 	if (content is None):
 		logging.info("recieved content is None!")
 		return
@@ -141,7 +152,6 @@ def recivedFn(content):
 		else:
 			logging.warning("recived unknown key : " + key)
 			pass
-
 	pass
 
 def run():
