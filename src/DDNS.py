@@ -61,6 +61,9 @@ def getIpType(use_v6):
 def DDNS(ip, type):
 	client = Utils.getAcsClient()
 	recordId, ipOnAli = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
+	if ((not (ip is None)) and ip == ipOnAli):
+		logging.warning("DDNS : ip == ipOnAli.")
+		return None
 
 	request = Utils.getCommonRequest()
 	request.set_domain('alidns.aliyuncs.com')
@@ -93,15 +96,16 @@ def timeoutFn():
 	pid = os.fork()
 	if (pid == 0):
 		# Child
+		content = '{"failed" : 1}'
 		try:
 			ip = getRealIp(isipv6, times)
 			content = '{"getrealip" : "'+ str(ip) + '"}'
-			send(content)
-			sys.exit(0)
 		except Exception as e:
 			logging.warning('Client error : ' + str(e))
+		finally:
+			send(content)
 			sys.exit(0)
-			pass			
+		pass
 	else:
 		# Parent
 		times += 1
@@ -117,14 +121,15 @@ def changeIp(ip):
 	pid = os.fork()
 	if (pid == 0):
 		#Child
+		content = '{"failed" : 1}'
 		try:
 			type = getIpType(isipv6)
 			result = DDNS(ip, type)
 			content = '{"ddns" : "'+ str(ip) + '"}'
-			send(content)
-			sys.exit(0)
 		except Exception as e:
 			logging.warning('DDNS error : ' + str(e))
+		finally:
+			send(content)
 			sys.exit(0)
 			pass
 	else:
@@ -134,6 +139,7 @@ def changeIp(ip):
 
 def recivedFn(content):
 	global pid
+	global prvIp
 	os.waitpid(-1, 0)
 	pid = 0
 	
@@ -149,6 +155,8 @@ def recivedFn(content):
 		elif (key == 'ddns'):
 			prvIp = d[key] 
 			logging.info("Set succ, ip: " + str(d[key]))
+		elif (key == 'failed'):
+			logging.info("recieved failed.")
 		else:
 			logging.warning("recived unknown key : " + key)
 			pass
@@ -175,3 +183,4 @@ def run():
 
 if __name__ == "__main__":
 	run()
+
