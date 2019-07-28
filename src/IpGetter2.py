@@ -1,7 +1,7 @@
 import urllib.request as urllib
 import re
 import json
-
+import os
 
 def get_page_source(url):
     headers = {
@@ -80,19 +80,27 @@ def get_sz_bendibao():
         return str(result.group())
     return None
 
+def get_tool_lu():
+    response = os.popen('curl -L https://tool.lu/ip/')
+    for line in response:
+        result = re.search(r'\d+\.\d+\.\d+\.\d+', str(line))
+        if (result):
+            return str(result.group())
+    return None
+
 ipList = [
     get_ipify_org,
     get_ipip_net,
     get_win7sky_com,
     get_ggbing_com,
     get_net_cn,
-    get_sz_bendibao,
+    get_tool_lu,
 ]
 
 def getIpList():
     return ipList
 
 if __name__ == '__main__':
-    for getter in getIpList():
-        ip = getter()
-        print(type(ip), ip)
+    for getter in ipList:
+        ip = getter()        
+        print (type(ip), ip)

@@ -99,9 +99,10 @@ def timeoutFn():
 		content = '{"failed" : 1}'
 		try:
 			ip = getRealIp(isipv6, times)
+			logging.info('getRealIp : times= ' + str(times) + ', ip=' + str(ip))
 			content = '{"getrealip" : "'+ str(ip) + '"}'
 		except Exception as e:
-			logging.warning('Client error : ' + str(e))
+			logging.warning('Client error : ' + str(e) + ', times=' + str(times))
 		finally:
 			send(content)
 			sys.exit(0)
