@@ -44,6 +44,7 @@ isipv6 = None
 times = 0
 daemonIP, daemonPort = Utils.getDaemonIpPort()
 pid = None
+FC = '{"failed" : 1}'
 
 def getRealIp(use_v6, times):
 	if use_v6: 
@@ -96,13 +97,13 @@ def timeoutFn():
 	pid = os.fork()
 	if (pid == 0):
 		# Child
-		content = '{"failed" : 1}'
 		try:
 			ip = getRealIp(isipv6, times)
 			logging.info('getRealIp : times= ' + str(times) + ', ip=' + str(ip))
 			content = '{"getrealip" : "'+ str(ip) + '"}'
 		except Exception as e:
 			logging.warning('Client error : ' + str(e) + ', times=' + str(times))
+			content = FC
 		finally:
 			send(content)
 			sys.exit(0)
@@ -122,13 +123,13 @@ def changeIp(ip):
 	pid = os.fork()
 	if (pid == 0):
 		#Child
-		content = '{"failed" : 1}'
 		try:
 			type = getIpType(isipv6)
 			result = DDNS(ip, type)
 			content = '{"ddns" : "'+ str(ip) + '"}'
 		except Exception as e:
 			logging.warning('DDNS error : ' + str(e))
+			content = FC
 		finally:
 			send(content)
 			sys.exit(0)
