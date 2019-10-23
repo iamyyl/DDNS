@@ -97,6 +97,7 @@ def timeoutFn():
 	pid = os.fork()
 	if (pid == 0):
 		# Child
+		content = None
 		try:
 			ip = getRealIp(isipv6, times)
 			logging.info('getRealIp : times= ' + str(times) + ', ip=' + str(ip))
@@ -123,6 +124,7 @@ def changeIp(ip):
 	pid = os.fork()
 	if (pid == 0):
 		#Child
+		content = None
 		try:
 			type = getIpType(isipv6)
 			result = DDNS(ip, type)
@@ -177,8 +179,15 @@ def run():
 		logging.error("Init socket server failed, ip=" + str(daemonIP) + ", port = " + str(daemonPort))
 		return	
 	
-	prvIp = getIpOnAli()
-	
+	while(True):
+		try:
+			prvIp = getIpOnAli()
+			break
+		except Exception as e:
+			logging.error('getIpOnAli failed:' + str(e))
+			time.sleep(5*60)
+			continue
+		
 	SocketServer.runServer(timeout=waitSeconds,timeoutFn=timeoutFn, recivedFn=recivedFn)
 	
 	logging.info("End")
