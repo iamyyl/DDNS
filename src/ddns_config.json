@@ -3,6 +3,7 @@
     "AccessKeySecret": "",
     "First-level-domain": "",
     "Second-level-domain": "",
+    "Second-level-domains": ["",],
     "Logpath":"/tmp",
     "Daemon-ip" : "127.0.0.1",
     "Daemon-port" : 7002,

@@ -61,25 +61,36 @@ def getIpType(use_v6):
 	
 def DDNS(ip, type):
 	client = Utils.getAcsClient()
-	recordId, ipOnAli = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
-	if ((not (ip is None)) and ip == ipOnAli):
-		logging.warning("DDNS : ip == ipOnAli.")
-		return None
+	records= Utils.getRecordIds(Utils.getConfigJson().get('Second-level-domains'))
+	for recordId, ipOnAli, domain in records:
+		if ((not (ip is None)) and ip == ipOnAli):
+			logging.warning("DDNS : ip == ipOnAli. and next record")
+			continue
 
-	request = Utils.getCommonRequest()
-	request.set_domain('alidns.aliyuncs.com')
-	request.set_version('2015-01-09')
-	request.set_action_name('UpdateDomainRecord')
-	request.add_query_param('RecordId', recordId)
-	request.add_query_param('RR', Utils.getConfigJson().get('Second-level-domain'))
-	request.add_query_param('Type', type)
-	request.add_query_param('Value', ip)
-	response = client.do_action_with_exception(request)
-	return response
+		try:
+			request = Utils.getCommonRequest()
+			request.set_domain('alidns.aliyuncs.com')
+			request.set_version('2015-01-09')
+			request.set_action_name('UpdateDomainRecord')
+			request.add_query_param('RecordId', recordId)
+			request.add_query_param('RR', domain)
+			request.add_query_param('Type', type)
+			request.add_query_param('Value', ip)
+			response = client.do_action_with_exception(request)
+		except Exception as e:
+			logging.warning("DDNS - update record exception :" + str(e))
+			continue
+	return True
 
 def getIpOnAli():
 	client = Utils.getAcsClient()
-	recordId, ipOnAli = Utils.getRecordId(Utils.getConfigJson().get('Second-level-domain'))
+	records = Utils.getRecordIds(Utils.getConfigJson().get('Second-level-domains'))
+	ipOnAli = None
+	for recordId, ip, domain in records:
+		if ipOnAli is None:
+			ipOnAli = ip
+		elif ipOnAli != ip:
+			return 'Wrong ip' 
 	return ipOnAli
 	
 def send(content):

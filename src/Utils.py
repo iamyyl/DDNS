@@ -45,6 +45,23 @@ class Utils:
 				return each["RecordId"], each["Value"]
 		return None, None
 
+	def getRecordIds(domains):
+		result = []
+		for domain in domains:
+			client = Utils.getAcsClient()
+			request = Utils.getCommonRequest()
+			request.set_domain('alidns.aliyuncs.com')
+			request.set_version('2015-01-09')
+			request.set_action_name('DescribeDomainRecords')
+			request.add_query_param('DomainName', Utils.getConfigJson().get('First-level-domain'))
+			response = client.do_action_with_exception(request)
+			jsonObj = json.loads(response.decode("UTF-8"))
+			records = jsonObj["DomainRecords"]["Record"]
+			for each in records:
+				if each["RR"] == domain:
+					result.append((each["RecordId"], each["Value"], domain))
+		return result
+
 	#获取CommonRequest
 	def getCommonRequest():
 		return CommonRequestSing.getInstance()
